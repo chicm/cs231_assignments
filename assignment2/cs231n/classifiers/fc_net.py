@@ -255,6 +255,9 @@ class FullyConnectedNet(object):
             #print(scores.shape)
             if i < L-1:
                 out_last_layer,_ = relu_forward(scores)
+                if self.use_dropout:
+                    out_last_layer,dropout_cache = dropout_forward(out_last_layer, self.dropout_param)
+                    self.cache['D'+str(i+1)] = dropout_cache
 
         #scores = affine_forward(out_last_layer, self.params['W'+str(L)], self.params['b'+str(L)])
 
@@ -289,6 +292,8 @@ class FullyConnectedNet(object):
         #grads['W'+str(L)] += self.params['W'+str(L)] * self.reg
         
         for i in range(L, 0, -1):
+            if self.use_dropout:
+                dx = dropout_backward(dx, self.cache['D'+str(i)]) if i < L else dx
             dscore = relu_backward(dx, self.cache['S'+str(i)]) if i < L else dx           
             dx, grads['W'+str(i)], grads['b'+str(i)] = affine_backward(dscore, (self.cache['X'+str(i)], self.params['W'+str(i)], self.params['b'+str(i)]))
             grads['W'+str(i)] += self.params['W'+str(i)] * self.reg
